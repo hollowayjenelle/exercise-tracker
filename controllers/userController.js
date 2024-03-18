@@ -98,7 +98,7 @@ exports.exercise_create = [
       res.json({
         message: "success",
         data: {
-          userId: req.params.id,
+          userId: Number(req.params.id),
           exercise_id: this.lastID,
           duration: req.body.duration,
           description: req.body.description,

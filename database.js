@@ -6,10 +6,6 @@ const createUser =
 const createExercise =
   "CREATE TABLE IF NOT EXISTS exercises (exercise_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, duration INTEGER NOT NULL, description TEXT NOT NULL, date TEXT)";
 
-// const insertUser = "INSERT INTO users username) VALUES (?)";
-// const insertExercise =
-//   "INSERT INTO exercises (user_id, duration, description, date) VALUES (?,?,?,?)";
-
 const db = new sqlite3.Database(DBSOURCE);
 
 console.log("Connected to the SQLite database");
