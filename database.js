@@ -2,7 +2,7 @@ const sqlite3 = require("sqlite3").verbose();
 
 const DBSOURCE = "db.sqlite";
 const createUser =
-  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL)";
+  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE)";
 const createExercise =
   "CREATE TABLE exercises (exercise_id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, duration INTEGER NOT NULL, description TEXT NOT NULL, date TEXT DEFAULT DATE('now'))";
 
