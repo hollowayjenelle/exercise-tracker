@@ -52,3 +52,53 @@ exports.user_create = [
     });
   }),
 ];
+
+exports.exercise_create = [
+  body("duration")
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage("Exercise duration is required")
+    .isNumeric()
+    .withMessage("Exercise duration should be a number"),
+  body("description")
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage("Exercise description is required"),
+  body("date").optional().isISO8601(),
+
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ error: errors.array() });
+      return;
+    }
+
+    const sql =
+      "INSERT INTO exercises (user_id, duration, description, date) VALUES (?, ?,?,?)";
+    const params = [
+      req.params.id,
+      req.body.duration,
+      req.body.description,
+      req.body.date,
+    ];
+
+    db.run(sql, params, function (err, result) {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      res.json({
+        message: "success",
+        data: {
+          userId: req.params.id,
+          exercise_id: this.lastID,
+          duration: req.body.duration,
+          description: req.body.description,
+          date: req.body.date,
+        },
+      });
+    });
+  }),
+];
