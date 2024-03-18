@@ -66,7 +66,11 @@ exports.exercise_create = [
     .escape()
     .notEmpty()
     .withMessage("Exercise description is required"),
-  body("date").optional().isISO8601(),
+  body("date")
+    .optional()
+    .isISO8601()
+    .matches(/^\d{4}-\d{2}-\d{2}$/)
+    .withMessage("Date should be in format YYYY-MM-DD"),
 
   asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
@@ -77,11 +81,13 @@ exports.exercise_create = [
 
     const sql =
       "INSERT INTO exercises (user_id, duration, description, date) VALUES (?, ?,?,?)";
+    const exerciseDate =
+      req.body.date || new Date().toLocaleDateString("en-CA");
     const params = [
       req.params.id,
       req.body.duration,
       req.body.description,
-      req.body.date,
+      exerciseDate,
     ];
 
     db.run(sql, params, function (err, result) {
@@ -96,7 +102,7 @@ exports.exercise_create = [
           exercise_id: this.lastID,
           duration: req.body.duration,
           description: req.body.description,
-          date: req.body.date,
+          date: exerciseDate,
         },
       });
     });
