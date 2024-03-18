@@ -10,6 +10,8 @@
 		"cors": "^2.8.5",
 		"dotenv": "^8.2.0",
 		"express": "^4.16.4",
+		"express-async-handler": "^1.2.0",
+		"express-validator": "^7.0.1",
 		"sqlite-async": "^1.2.0",
 		"sqlite3": "^5.1.7"
 	},
@@ -22,6 +24,7 @@
 		"express"
 	],
 	"devDependencies": {
+		"body-parser": "^1.20.2",
 		"nodemon": "^3.1.0"
 	}
 }
