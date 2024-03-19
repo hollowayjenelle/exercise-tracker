@@ -84,7 +84,7 @@ exports.exercise_create = [
     .notEmpty()
     .withMessage("Exercise description is required"),
   body("date")
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .matches(/^\d{4}-\d{2}-\d{2}$/)
     .withMessage("Date should be in format YYYY-MM-DD")
@@ -151,25 +151,25 @@ exports.get_all_user_logs = (req, res, next) => {
       return;
     }
 
-    let limit = "limit" in req.query ? req.query.limit : rows.length;
-
     let exercises = hasQueryParams
-      ? rows
-          .filter((exercise) => {
-            let to =
-              "to" in req.query
-                ? req.query.to
-                : new Date().toLocaleDateString("en-CA");
-            return exercise.date >= req.query.from && exercise.date <= to;
-          })
-          .splice(0, limit)
+      ? rows.filter((exercise) => {
+          let to =
+            "to" in req.query
+              ? req.query.to
+              : new Date().toLocaleDateString("en-CA");
+          return exercise.date >= req.query.from && exercise.date <= to;
+        })
       : rows;
+
+    let limit = "limit" in req.query ? req.query.limit : exercises.length;
+    let exerciseCount = exercises.length;
+    exercises = exercises.splice(0, limit);
 
     res.json({
       message: "success",
       data: {
         logs: exercises,
-        count: rows.length,
+        count: exerciseCount,
       },
     });
   });
