@@ -1,5 +1,5 @@
 const db = require("../database");
-const { body, validationResult } = require("express-validator");
+const { body, validationResult, param } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 
 exports.user_get_all = (req, res, next) => {
@@ -53,6 +53,23 @@ exports.user_create = [
   }),
 ];
 
+const validateUser = (id, callback) => {
+  const sql = "SELECT COUNT(*) AS count FROM users WHERE id = ?";
+  db.get(sql, [id], (err, row) => {
+    if (err) {
+      console.log(err.message);
+      return callback(err, null);
+    }
+
+    const userExists = row.count > 0;
+    callback(null, userExists);
+  });
+};
+
+const isDateValid = (date) => {
+  return new Date(date) !== "Invalid Date";
+};
+
 exports.exercise_create = [
   body("duration")
     .trim()
@@ -70,7 +87,10 @@ exports.exercise_create = [
     .optional()
     .isISO8601()
     .matches(/^\d{4}-\d{2}-\d{2}$/)
-    .withMessage("Date should be in format YYYY-MM-DD"),
+    .withMessage("Date should be in format YYYY-MM-DD")
+    .custom((date) => isDateValid(date))
+    .withMessage("Invalid Date"),
+  param("id").exists().withMessage("ID Parameter does not exists"),
 
   asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
@@ -79,31 +99,41 @@ exports.exercise_create = [
       return;
     }
 
-    const sql =
-      "INSERT INTO exercises (user_id, duration, description, date) VALUES (?, ?,?,?)";
-    const exerciseDate =
-      req.body.date || new Date().toLocaleDateString("en-CA");
-    const params = [
-      req.params.id,
-      req.body.duration,
-      req.body.description,
-      exerciseDate,
-    ];
-
-    db.run(sql, params, function (err, result) {
+    validateUser(req.params.id, (err, userExists) => {
       if (err) {
-        res.status(400).json({ error: err.message });
-        return;
+        return res.status(500).send({ error: "Internal Server Error" });
       }
-      res.json({
-        message: "success",
-        data: {
-          userId: Number(req.params.id),
-          exercise_id: this.lastID,
-          duration: req.body.duration,
-          description: Number(req.body.description),
-          date: exerciseDate,
-        },
+
+      if (!userExists) {
+        return res.status(404).send({ error: "User not found" });
+      }
+
+      const sql =
+        "INSERT INTO exercises (user_id, duration, description, date) VALUES (?, ?,?,?)";
+      const exerciseDate =
+        req.body.date || new Date().toLocaleDateString("en-CA");
+      const params = [
+        req.params.id,
+        req.body.duration,
+        req.body.description,
+        exerciseDate,
+      ];
+
+      db.run(sql, params, function (err, result) {
+        if (err) {
+          res.status(400).json({ error: err.message });
+          return;
+        }
+        res.json({
+          message: "success",
+          data: {
+            userId: Number(req.params.id),
+            exercise_id: this.lastID,
+            duration: Number(req.body.duration),
+            description: req.body.description,
+            date: exerciseDate,
+          },
+        });
       });
     });
   }),
@@ -111,21 +141,34 @@ exports.exercise_create = [
 
 exports.get_all_user_logs = (req, res, next) => {
   const hasQueryParams = Object.keys(req.query).length !== 0;
-  const sql = hasQueryParams
-    ? "SELECT exercise_id, description, duration, date FROM exercises WHERE user_id = ? AND date BETWEEN ? AND ? LIMIT ?"
-    : "SELECT exercise_id, description, duration, date FROM exercises WHERE user_id = ?";
-  const params = hasQueryParams
-    ? [req.params.id, req.query.from, req.query.to, req.query.limit]
-    : [req.params.id];
+
+  const sql =
+    "SELECT exercise_id, description, duration, date FROM exercises WHERE user_id = ? ORDER BY date ASC";
+  const params = hasQueryParams ? [req.params.id] : [req.params.id];
   db.all(sql, params, function (err, rows) {
     if (err) {
       res.status(400).json({ error: err.message });
       return;
     }
+
+    let limit = "limit" in req.query ? req.query.limit : rows.length;
+
+    let exercises = hasQueryParams
+      ? rows
+          .filter((exercise) => {
+            let to =
+              "to" in req.query
+                ? req.query.to
+                : new Date().toLocaleDateString("en-CA");
+            return exercise.date >= req.query.from && exercise.date <= to;
+          })
+          .splice(0, limit)
+      : rows;
+
     res.json({
       message: "success",
       data: {
-        logs: rows,
+        logs: exercises,
         count: rows.length,
       },
     });
