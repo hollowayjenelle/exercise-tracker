@@ -101,10 +101,33 @@ exports.exercise_create = [
           userId: Number(req.params.id),
           exercise_id: this.lastID,
           duration: req.body.duration,
-          description: req.body.description,
+          description: Number(req.body.description),
           date: exerciseDate,
         },
       });
     });
   }),
 ];
+
+exports.get_all_user_logs = (req, res, next) => {
+  const hasQueryParams = Object.keys(req.query).length !== 0;
+  const sql = hasQueryParams
+    ? "SELECT exercise_id, description, duration, date FROM exercises WHERE user_id = ? AND date BETWEEN ? AND ? LIMIT ?"
+    : "SELECT exercise_id, description, duration, date FROM exercises WHERE user_id = ?";
+  const params = hasQueryParams
+    ? [req.params.id, req.query.from, req.query.to, req.query.limit]
+    : [req.params.id];
+  db.all(sql, params, function (err, rows) {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      data: {
+        logs: rows,
+        count: rows.length,
+      },
+    });
+  });
+};

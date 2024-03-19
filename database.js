@@ -11,9 +11,7 @@ const db = new sqlite3.Database(DBSOURCE);
 console.log("Connected to the SQLite database");
 db.serialize(() => {
   db.run(createUser);
-  console.log("user table created");
   db.run(createExercise);
-  console.log("exercise table created");
 });
 
 module.exports = db;

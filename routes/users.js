@@ -11,4 +11,6 @@ router.post("/", user_controller.user_create);
 
 router.post("/:id/exercises", user_controller.exercise_create);
 
+router.get("/:id/logs", user_controller.get_all_user_logs);
+
 module.exports = router;
